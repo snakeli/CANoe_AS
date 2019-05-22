@@ -26,24 +26,26 @@ def read_vsq(vsq_list):
 
         with open(vsq, 'r') as file_to_read:
             vsq_lines = file_to_read.readlines()
-            parse_vsq(vsq_lines)
+            for line in vsq_lines:
+                parse_vsq(vsq_lines)
 
 
 def parse_vsq(vsq_content):
-    for line in vsq_content:
-        line_list = line.split(",")
-        if line_list[1] == "Comment":
-            continue
-        elif line_list[1] == "":
-            continue
-        elif line_list[1] == "Wait" and line_list[3] == "ms":
-            print("Wait %s %s" % (line_list[2], line_list[3]))
-            time.sleep(float(line_list[2])/1000)
-        elif line_list[1] == "Set":
-            print("Set sysvar %s %s %s, then wait %s ms" % (line_list[2], line_list[3], line_list[4], line_list[5]))
-            # Todo: CANoe中设置sysvar
-            time.sleep(float(line_list[5])/1000)
-
+    line_list = line.split(",")
+    if line_list[1] == "Comment":
+        continue
+    elif line_list[1] == "":
+        continue
+    elif line_list[1] == "Wait" and line_list[3] == "ms":
+        print("Wait %s %s" % (line_list[2], line_list[3]))
+        time.sleep(float(line_list[2])/1000)
+    elif line_list[1] == "Set":
+        print("Set sysvar %s %s %s, then wait %s ms" % (line_list[2], line_list[3], line_list[4], line_list[5]))
+        # Todo: CANoe中设置sysvar
+        time.sleep(float(line_list[5])/1000)
+    elif line_list[1] == "Repeat":
+        for i in range(int(line_list[2])):
+            parse_vsq()
 
 
 if __name__ == "__main__":
