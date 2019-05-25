@@ -19,35 +19,68 @@ def get_sequences(auto_folder):
     return sequences_list
 
 
-def read_vsq(vsq_list):
-    for vsq in vsq_list:
-        print("################ Test %s" % vsq)
-        # Todo: 启动CANoe
+class VSQ:
+    def __init__(self, vsq_file_list):
+        self.vsq_list = vsq_file_list
+        self.vsq_lines = []
 
-        with open(vsq, 'r') as file_to_read:
-            vsq_lines = file_to_read.readlines()
-            for line in vsq_lines:
-                parse_vsq(vsq_lines)
+    
+
+    def read_vsq(self):
+        for vsq in self.vsq_list:
+            print("################ Test %s" % vsq)
+            # Todo: 启动CANoe
+
+            with open(vsq, 'r') as file_to_read:
+                self.vsq_lines = file_to_read.readlines()
+                while self.vsq_lines:
+                    self.parse_vsq(False, 0)
+
+    def parse_vsq(self, repeat_indecator, index):
+        line = self.vsq_lines[index].strip()
+        if not repeat_indecator:
+            del self.vsq_lines[index]
+        line_list = line.split(",")
+        # print(line_list)
+        if line_list[0] == "":
+            return 1
+        elif line_list[1] == "Comment":
+            return 1
+        elif line_list[1] == "":
+            return 1
+        elif line_list[1] == "Wait" and line_list[3] == "ms":
+            print("Wait %s %s" % (line_list[2], line_list[3]))
+            time.sleep(float(line_list[2])/1000)
+        elif line_list[1] == "Set":
+            print("Set sysvar %s %s %s, then wait %s ms" % (line_list[2], line_list[3], line_list[4], line_list[5]))
+            # Todo: CANoe中设置sysvar
+            time.sleep(float(line_list[5])/1000)
+        elif line_list[1] == "Repeat":
+            repeat_times = int(line_list[2])
+            print("Repeat %s times" % repeat_times)
+            for i in range(repeat_times):
+                if i == (repeat_times - 1):
+                    repeat_indecator = False
+                else:
+                    repeat_indecator = True
+                print("Repeat index: %d" % i)
+                content_index = 0
+                repeat_index = self.parse_vsq(repeat_indecator, content_index)
+                while repeat_index != 0:
+                    if repeat_indecator:
+                        content_index += 1
+                    repeat_index = self.parse_vsq(repeat_indecator, content_index)
 
 
-def parse_vsq(vsq_content):
-    line_list = line.split(",")
-    if line_list[1] == "Comment":
-        continue
-    elif line_list[1] == "":
-        continue
-    elif line_list[1] == "Wait" and line_list[3] == "ms":
-        print("Wait %s %s" % (line_list[2], line_list[3]))
-        time.sleep(float(line_list[2])/1000)
-    elif line_list[1] == "Set":
-        print("Set sysvar %s %s %s, then wait %s ms" % (line_list[2], line_list[3], line_list[4], line_list[5]))
-        # Todo: CANoe中设置sysvar
-        time.sleep(float(line_list[5])/1000)
-    elif line_list[1] == "Repeat":
-        for i in range(int(line_list[2])):
-            parse_vsq()
+        elif line_list[1] == "Repeat End":
+            print("Repeat End")
+            return 0
 
+        else:
+            print("************************", line, "*******************")
+            return 1
 
 if __name__ == "__main__":
     sequences_list = get_sequences("Auto_Sequences")
-    read_vsq(sequences_list)
+    vsq_operator = VSQ(sequences_list)
+    vsq_operator.read_vsq()
