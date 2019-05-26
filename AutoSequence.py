@@ -4,6 +4,8 @@
 import os
 import sys
 import time
+from Python_CANoe import CANoe
+
 
 def get_sequences(auto_folder):
     sequences_path = os.path.dirname(os.path.realpath(sys.argv[0])) + os.sep + auto_folder
@@ -19,22 +21,28 @@ def get_sequences(auto_folder):
     return sequences_list
 
 
+
 class VSQ:
     def __init__(self, vsq_file_list):
         self.vsq_list = vsq_file_list
         self.vsq_lines = []
+        self.can_app = CANoe()
 
-    
+        self.can_app.open_simulation("test.cfg")
 
     def read_vsq(self):
         for vsq in self.vsq_list:
             print("################ Test %s" % vsq)
             # Todo: 启动CANoe
+            self.can_app.start_Measurement()
 
             with open(vsq, 'r') as file_to_read:
                 self.vsq_lines = file_to_read.readlines()
                 while self.vsq_lines:
                     self.parse_vsq(False, 0)
+            
+            self.can_app.stop_Measurement()
+            time.sleep(20)
 
     def parse_vsq(self, repeat_indecator, index):
         line = self.vsq_lines[index].strip()
@@ -53,6 +61,13 @@ class VSQ:
             time.sleep(float(line_list[2])/1000)
         elif line_list[1] == "Set":
             print("Set sysvar %s %s %s, then wait %s ms" % (line_list[2], line_list[3], line_list[4], line_list[5]))
+            sys_var = line_list[2].split("::")
+            ns_name = sys_var[1]
+            sysvar_name = sys_var[2]
+            set_value = line_list[4]
+            
+            self.can_app.set_SysVar(ns_name, sysvar_name, set_value)
+            
             # Todo: CANoe中设置sysvar
             time.sleep(float(line_list[5])/1000)
         elif line_list[1] == "Repeat":
